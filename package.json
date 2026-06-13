@@ -58,10 +58,10 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.1",
     "webpack": "^5.105.3",
-    "webpack-cli": "^6.0.1"
+    "webpack-cli": "^6.0.1",
+    "@vscode/vsce": "^3.9.2"
   },
   "dependencies": {
-    "@vscode/codicons": "^0.0.45",
-    "@vscode/vsce": "^3.9.2"
+    "@vscode/codicons": "^0.0.45"
   }
 }
