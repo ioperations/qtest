@@ -1,7 +1,10 @@
 import * as vscode from "vscode";
 
 class MyToolsViewProvider implements vscode.WebviewViewProvider {
-  constructor(private readonly context: vscode.ExtensionContext) {}
+  constructor(private readonly context: vscode.ExtensionContext) {
+    this.m_context = context;
+  }
+  m_context: vscode.ExtensionContext;
 
   resolveWebviewView(view: vscode.WebviewView) {
     const webview = view.webview;
@@ -33,55 +36,71 @@ class MyToolsViewProvider implements vscode.WebviewViewProvider {
   }
 
   getHtml(webview: vscode.Webview) {
-    const nonce = String(Date.now());
+    const extensionUri = this.m_context.extensionUri;
+
+    const codiconsUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(
+        extensionUri,
+        "node_modules",
+        "@vscode/codicons",
+        "dist",
+        "codicon.css",
+      ),
+    );
 
     return `
-    <div class="toolbar-container">
-     <div class="debug-toolbar">
-      <button onclick="send('continue')">▶ </button>
-      <button onclick="send('stepOver')">↷ </button>
-      <button onclick="send('stepInto')">↓ </button>
-      <button onclick="send('stepOut')">↑ </button>
-      <button onclick="send('stop')">■ </button>
-     </div>
-    </div>
+     <html>
+       <head>
+         <link href="${codiconsUri}" rel="stylesheet"/>
+       </head>
+       <body>
+         <div class="toolbar-container">
+          <div class="debug-toolbar">
+             <button onclick="send('continue')"><i class="codicon codicon-debug-continue"></i></button>
+             <button onclick="send('stepOver')" class="icon-btn"><i class="codicon codicon-debug-step-over"></i></button>
+             <button onclick="send('stepInto')" class="icon-btn"><i class="codicon codicon-debug-step-into"></i></button>
+             <button onclick="send('stepOut')" class="icon-btn"><i class="codicon codicon-debug-step-out"></i></button>
+             <button onclick="send('stop')" class="icon-btn"><i class="codicon codicon-debug-stop"></i></button>
+          </div>
+         </div>
 
-    <style>
-      .toolbar-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 12px;
-      }
-      .debug-toolbar {
-        display: flex;
-        gap: 4px;
-        padding: 8px;
-        background: var(--vscode-editor-background);
-        border-bottom: 1px solid var(--vscode-panel-border);
-      }
-      .debug-toolbar button {
-        width: 32px;
-        height: 32px;
-        font-size: 16px;
-        border: none;
-        border-radius: 4px;
-        background: var(--vscode-button-secondaryBackground);
-        color: var(--vscode-foreground);
-        cursor: pointer;
-      }
-      .debug-toolbar button:hover {
-        background: var(--vscode-button-hoverBackground);
-      }
-    </style>
+         <style>
+           .toolbar-container {
+             display: flex;
+             justify-content: center;
+             align-items: center;
+             padding: 12px;
+           }
+           .debug-toolbar {
+             display: flex;
+             gap: 4px;
+             padding: 8px;
+             background: var(--vscode-editor-background);
+             border-bottom: 1px solid var(--vscode-panel-border);
+           }
+           .debug-toolbar button {
+             width: 32px;
+             height: 32px;
+             font-size: 16px;
+             border: none;
+             border-radius: 4px;
+             background: var(--vscode-button-secondaryBackground);
+             color: var(--vscode-foreground);
+             cursor: pointer;
+           }
+           .debug-toolbar button:hover {
+             background: var(--vscode-button-hoverBackground);
+           }
+         </style>
 
-    <script>
-      const vscode = acquireVsCodeApi();
-      function send(cmd) {
-        vscode.postMessage({ command: cmd });
-      }
-    </script>
-    `;
+         <script>
+           const vscode = acquireVsCodeApi();
+           function send(cmd) {
+             vscode.postMessage({ command: cmd });
+           }
+         </script>
+      </body>
+      </html>`;
   }
 }
 
@@ -90,18 +109,12 @@ export function activate(context: vscode.ExtensionContext) {
     "myToolsView",
     new MyToolsViewProvider(context),
   );
-  // console.log('Congratulations, your extension "qtest" is now active!');
-  // 1. Register backend functionality for your individual actions
+
   vscode.commands.registerCommand("myext.run", () => {
     vscode.window.showInformationMessage("Run clicked");
   });
 
   vscode.commands.registerCommand("myext.debug", () => {
-    // vscode.debug.startDebugging(undefined, {
-    //   type: "node",
-    //   request: "launch",
-    //   program: "${file}"
-    // });
     vscode.window.showInformationMessage("debug!!!");
   });
 
@@ -110,5 +123,4 @@ export function activate(context: vscode.ExtensionContext) {
   });
 }
 
-// This method is called when your extension is deactivated
 export function deactivate() {}
