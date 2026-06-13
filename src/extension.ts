@@ -37,123 +37,50 @@ class MyToolsViewProvider implements vscode.WebviewViewProvider {
 
     return `
     <div class="toolbar-container">
+     <div class="debug-toolbar">
+      <button onclick="send('continue')">▶ </button>
+      <button onclick="send('stepOver')">↷ </button>
+      <button onclick="send('stepInto')">↓ </button>
+      <button onclick="send('stepOut')">↑ </button>
+      <button onclick="send('stop')">■ </button>
+     </div>
+    </div>
 
-    <div class="debug-toolbar">
-  <button onclick="send('continue')">▶ </button>
-  <button onclick="send('stepOver')">↷ </button>
-  <button onclick="send('stepInto')">↓ </button>
-  <button onclick="send('stepOut')">↑ </button>
-  <button onclick="send('stop')">■ </button>
-</div>
-</div>
+    <style>
+      .toolbar-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 12px;
+      }
+      .debug-toolbar {
+        display: flex;
+        gap: 4px;
+        padding: 8px;
+        background: var(--vscode-editor-background);
+        border-bottom: 1px solid var(--vscode-panel-border);
+      }
+      .debug-toolbar button {
+        width: 32px;
+        height: 32px;
+        font-size: 16px;
+        border: none;
+        border-radius: 4px;
+        background: var(--vscode-button-secondaryBackground);
+        color: var(--vscode-foreground);
+        cursor: pointer;
+      }
+      .debug-toolbar button:hover {
+        background: var(--vscode-button-hoverBackground);
+      }
+    </style>
 
-<style>
-.toolbar-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 12px;
-}
-  .debug-toolbar {
-    display: flex;
-    gap: 4px;
-    padding: 8px;
-    background: var(--vscode-editor-background);
-    border-bottom: 1px solid var(--vscode-panel-border);
-  }
-  .debug-toolbar button {
-    width: 32px;
-    height: 32px;
-    font-size: 16px;
-    border: none;
-    border-radius: 4px;
-    background: var(--vscode-button-secondaryBackground);
-    color: var(--vscode-foreground);
-    cursor: pointer;
-  }
-  .debug-toolbar button:hover {
-    background: var(--vscode-button-hoverBackground);
-  }
-</style>
-
-<script>
-  const vscode = acquireVsCodeApi();
-  function send(cmd) {
-    vscode.postMessage({ command: cmd });
-  }
-</script>
-`;
-    return `
-      <html>
-      <body>
-        <div class="toolbar">
-          <button class="btn" data-action="run">
-            <span class="codicon codicon-play"></span>
-          </button>
-          <button class="btn" data-action="debug">
-            <span class="codicon codicon-debug-alt"></span>
-          </button>
-          <button class="btn" data-action="download">
-            <span class="codicon codicon-cloud-download"></span>
-          </button>
-        </div>
-
-        <script nonce="${nonce}">
-          const vscode = acquireVsCodeApi();
-          document.querySelectorAll(".btn").forEach(btn => {
-            btn.addEventListener("click", () => {
-              vscode.postMessage({ action: btn.dataset.action });
-            });
-          });
-        </script>
-
-        <style>
-
-            padding: 0;
-            margin: 0;
-            background: var(--vscode-sideBar-background);
-            color: var(--vscode-foreground);
-            font-family: var(--vscode-font-family);
-          }
-
-          .toolbar {
-  			display: flex;
-  			flex-direction: row;
-  			align-items: center;
-            gap: 6px;
-            padding: 8px;
-            background: var(--vscode-editor-background);
-            border-bottom: 1px solid var(--vscode-panel-border);
-          }
-
-          .btn {
-            width: 28px;
-            height: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 4px;
-            border: 1px solid transparent;
-            background: var(--vscode-button-secondaryBackground);
-            cursor: pointer;
-          }
-
-          .btn:hover {
-            background: var(--vscode-button-hoverBackground);
-            border-color: var(--vscode-focusBorder);
-          }
-
-          .btn:active {
-            background: var(--vscode-button-background);
-          }
-
-          .codicon {
-            font-size: 16px;
-            color: var(--vscode-foreground);
-          }
-        </style>
-      </body>
-      </html>
+    <script>
+      const vscode = acquireVsCodeApi();
+      function send(cmd) {
+        vscode.postMessage({ command: cmd });
+      }
+    </script>
     `;
   }
 }
