@@ -17,11 +17,21 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-      - run: sudo apt update && sudo apt install nodejs npm yarn
-      - run: sudo npm install -g typescript
+      - run: DEBIAN_FRONTEND="noninteractive" sudo apt update -qq && sudo apt install nodejs npm yarn
+      - run: DEBIAN_FRONTEND="noninteractive" sudo npm install -g typescript
       - run: |
           yarn install
           yarn compile
           yarn run package
           yarn run vsce
+      - name: releaseFile
+        uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "latest"
+          prerelease: true
+          title: "Development Build"
+          files: |
+            LICENSE
+            *.vsix
           
