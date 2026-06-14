@@ -32,6 +32,11 @@
           "id": "myToolsView",
           "name": "My Tools",
           "type": "webview"
+        },
+        {
+          "id": "myToolsView2",
+          "name": "My Tools2",
+          "type": "webview"
         }
       ]
     }
