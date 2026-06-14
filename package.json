@@ -21,13 +21,14 @@
         {
           "id": "myToolsSidebar",
           "title": "Tools",
-          "icon": "media/myicon.svg"
+          "icon": "img/p.svg"
         }
       ]
     },
     "views": {
       "myToolsSidebar": [
         {
+          "icon": "./img/p.svg",
           "id": "myToolsView",
           "name": "My Tools",
           "type": "webview"
