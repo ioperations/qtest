@@ -39,7 +39,7 @@ const App: React.FC = () => {
   const [isConnected, setIsConnected] = useState(false);
 
   const addMessage = useCallback((msg: string) => {
-    setMessages((prev) => [...prev, `[${new Date().toLocaleTimeString()}] ${msg}`]);
+    setMessages((prev) => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev]);
   }, []);
 
   const sendMessage = useCallback((command: string, data?: unknown) => {
