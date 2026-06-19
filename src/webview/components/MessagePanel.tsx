@@ -5,7 +5,10 @@ interface MessagePanelProps {
   onClear: () => void;
 }
 
-export const MessagePanel: React.FC<MessagePanelProps> = ({ messages, onClear }) => {
+export const MessagePanel: React.FC<MessagePanelProps> = ({
+  messages,
+  onClear,
+}) => {
   return (
     <div className="message-panel">
       <div className="message-panel-header">
@@ -16,7 +19,9 @@ export const MessagePanel: React.FC<MessagePanelProps> = ({ messages, onClear })
       </div>
       <div className="message-list">
         {messages.length === 0 ? (
-          <div className="no-messages">No messages yet. Actions will appear here.</div>
+          <div className="no-messages">
+            No messages yet. Actions will appear here.
+          </div>
         ) : (
           messages.map((msg, index) => (
             <div key={index} className="message-item">

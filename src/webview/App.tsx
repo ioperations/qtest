@@ -25,9 +25,11 @@ function useVsCodeApi(): VsCodeApi {
       return window.acquireVsCodeApi();
     }
     return {
-      postMessage: (message: unknown) => console.log("[Mock VS Code] postMessage:", message),
+      postMessage: (message: unknown) =>
+        console.log("[Mock VS Code] postMessage:", message),
       getState: () => ({}),
-      setState: (state: unknown) => console.log("[Mock VS Code] setState:", state),
+      setState: (state: unknown) =>
+        console.log("[Mock VS Code] setState:", state),
     };
   }, []);
 }
@@ -39,19 +41,27 @@ const App: React.FC = () => {
   const [isConnected, setIsConnected] = useState(false);
 
   const addMessage = useCallback((msg: string) => {
-    setMessages((prev) => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev]);
+    setMessages((prev) => [
+      `[${new Date().toLocaleTimeString()}] ${msg}`,
+      ...prev,
+    ]);
   }, []);
 
-  const sendMessage = useCallback((command: string, data?: unknown) => {
-    vscode.postMessage({ command, data });
-    addMessage(`Sent: ${command}${data ? ` (${JSON.stringify(data)})` : ""}`);
-  }, [vscode, addMessage]);
+  const sendMessage = useCallback(
+    (command: string, data?: unknown) => {
+      vscode.postMessage({ command, data });
+      addMessage(`Sent: ${command}${data ? ` (${JSON.stringify(data)})` : ""}`);
+    },
+    [vscode, addMessage],
+  );
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       const message = event.data as ExtensionMessage;
       if (message) {
-        addMessage(`Received: ${message.command}${message.data ? ` (${JSON.stringify(message.data)})` : ""}`);
+        addMessage(
+          `Received: ${message.command}${message.data ? ` (${JSON.stringify(message.data)})` : ""}`,
+        );
 
         switch (message.command) {
           case "init":
