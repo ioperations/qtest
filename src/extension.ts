@@ -1,219 +1,181 @@
 import * as vscode from "vscode";
+import * as path from "path";
+import * as fs from "fs";
+
+interface WebviewMessage {
+  command: string;
+  data?: unknown;
+}
 
 class MyToolsViewProvider implements vscode.WebviewViewProvider {
-  constructor(
-    private readonly context: vscode.ExtensionContext,
-    private readonly id: number,
-  ) {
-    this.m_context = context;
-    this.m_id = id;
+  private _view?: vscode.WebviewView;
+  private _context: vscode.ExtensionContext;
+
+  constructor(context: vscode.ExtensionContext) {
+    this._context = context;
   }
-  m_context: vscode.ExtensionContext;
-  m_id: number;
 
-  resolveWebviewView(view: vscode.WebviewView) {
-    const webview = view.webview;
-    webview.options = { enableScripts: true };
+  resolveWebviewView(
+    webviewView: vscode.WebviewView,
+    _context: vscode.WebviewViewResolveContext,
+    _token: vscode.CancellationToken
+  ) {
+    this._view = webviewView;
 
-    if (this.m_id === 1) {
-      webview.html = this.getHtml(webview);
-      webview.onDidReceiveMessage(async (msg) => {
-        switch (msg.command) {
-          case "continue":
-            // vscode.commands.executeCommand('workbench.action.debug.continue');
-            break;
-          case "stepOver":
-            // vscode.commands.executeCommand('workbench.action.debug.stepOver');
-            break;
-          case "stepInto":
-            // vscode.commands.executeCommand('workbench.action.debug.stepInto');
-            break;
-          case "stepOut":
-            // vscode.commands.executeCommand('workbench.action.debug.stepOut');
-            break;
-          case "stop":
-            // vscode.commands.executeCommand('workbench.action.debug.stop');
-            break;
-        }
+    webviewView.webview.options = {
+      enableScripts: true,
+      localResourceRoots: [
+        this._context.extensionUri,
+        vscode.Uri.joinPath(this._context.extensionUri, "dist", "webview"),
+      ],
+    };
 
-        vscode.window.showInformationMessage(`${msg.command} clicked`);
-      });
-    } else {
-      webview.html = this.getHtml2(webview);
-      let value = "";
+    webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
 
-      webview.onDidReceiveMessage(async (msg) => {
-        switch (msg.command) {
-          case "alertSelection":
-            // vscode.commands.executeCommand('workbench.action.debug.continue');
-            value = msg.value;
-            break;
-          case "download":
-            // vscode.commands.executeCommand('workbench.action.debug.stop');
-            break;
-        }
+    webviewView.webview.onDidReceiveMessage(
+      (message: WebviewMessage) => this._handleMessage(message),
+      undefined,
+      this._context.subscriptions
+    );
 
-        vscode.window.showInformationMessage(`${msg.command} clicked, value ${value}`);
-      });
+    webviewView.onDidDispose(() => {
+      this._view = undefined;
+    }, null, this._context.subscriptions);
+  }
+
+  private _getHtmlForWebview(webview: vscode.Webview): string {
+    const webviewDistPath = vscode.Uri.joinPath(this._context.extensionUri, "dist", "webview");
+    
+    const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(webviewDistPath, "index.js"));
+    const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(webviewDistPath, "index.css"));
+    const codiconCssUri = webview.asWebviewUri(vscode.Uri.joinPath(webviewDistPath, "codicon.css"));
+
+    const nonce = getNonce();
+
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}'; font-src ${webview.cspSource};">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="${codiconCssUri}" rel="stylesheet">
+    <link href="${styleUri}" rel="stylesheet">
+    <title>QTest Webview</title>
+</head>
+<body>
+    <div id="root"></div>
+    <script nonce="${nonce}" src="${scriptUri}"></script>
+</body>
+</html>`;
+  }
+
+  private _handleMessage(message: WebviewMessage) {
+    switch (message.command) {
+      case "ready":
+        this._sendToWebview({ command: "init", data: { framework: "react" } });
+        vscode.window.showInformationMessage("Webview connected!");
+        break;
+
+      case "frameworkSelected":
+        vscode.window.showInformationMessage(`Framework selected: ${message.data}`);
+        break;
+
+      case "debugAction":
+        this._handleDebugAction(message.data as string);
+        break;
+
+      case "download":
+        this._handleDownload(message.data as { framework?: string });
+        break;
+
+      case "clearMessages":
+        console.log("Messages cleared from webview");
+        break;
+
+      default:
+        console.log("Unknown message:", message);
     }
   }
 
-  getHtml2(webview: vscode.Webview) {
-    const extensionUri = this.m_context.extensionUri;
+  private _handleDebugAction(action: string) {
+    const commands: Record<string, string> = {
+      continue: "workbench.action.debug.continue",
+      stepOver: "workbench.action.debug.stepOver",
+      stepInto: "workbench.action.debug.stepInto",
+      stepOut: "workbench.action.debug.stepOut",
+      stop: "workbench.action.debug.stop",
+    };
 
-    const codiconsUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(
-        extensionUri,
-        "node_modules",
-        "@vscode/codicons",
-        "dist",
-        "codicon.css",
-      ),
-    );
-    return `
-     <html>
-       <head>
-         <link href="${codiconsUri}" rel="stylesheet"/>
-       </head>
-       <body>
-         <div class="toolbar-container">
-          <div class="debug-toolbar">
-             <select id="framework-select" name="frameworks">
-               <option value=""> - Please choose an option - </option>
-               <option value="react">React</option>
-               <option value="vue">Vue.js</option>
-               <option value="angular">Angular</option>
-             </select>
-             <span style="width: 12px"></span>
-             <button onclick="send('download')"><i class="codicon codicon-download"></i></button>
-          </div>
-         </div>
-         <style>
-         select {
-           background-color: var(--vscode-dropdown-background);
-           color: var(--vscode-dropdown-foreground);
-           border: 1px solid var(--vscode-dropdown-border);
-           padding: 4px 8px;
-           border-radius: 2px;
-         }
-         .toolbar-container {
-            align-items: center;
-         }
-         .debug-toolbar {
-           display: flex;
-           justify-content: center;
-           align-items: center;
-           padding: 12px;
-         }
-         </style>
-         <script>
-             const vscode = acquireVsCodeApi();
-             const dropdown = document.getElementById('framework-select');
-
-             dropdown.addEventListener('change', (event) => {
-               // Send message to extension backend
-               vscode.postMessage({
-                 command: 'alertSelection',
-                 value: event.target.value
-               });
-             });
-
-             function send(cmd) {
-              vscode.postMessage({ command: cmd });
-             }
-         </script>
-       </body>
-      </html> `;
+    const command = commands[action];
+    if (command) {
+      vscode.commands.executeCommand(command);
+      vscode.window.showInformationMessage(`Debug action: ${action}`);
+    }
   }
 
-  getHtml(webview: vscode.Webview) {
-    const extensionUri = this.m_context.extensionUri;
+  private _handleDownload(data: { framework?: string }) {
+    const framework = data.framework || "unknown";
+    vscode.window.showInformationMessage(`Download requested for ${framework}`);
+    
+    this._sendToWebview({ 
+      command: "downloadComplete", 
+      data: { framework, timestamp: new Date().toISOString() } 
+    });
+  }
 
-    const codiconsUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(
-        extensionUri,
-        "node_modules",
-        "@vscode/codicons",
-        "dist",
-        "codicon.css",
-      ),
-    );
+  private _sendToWebview(message: WebviewMessage) {
+    this._view?.webview.postMessage(message);
+  }
 
-    return `
-     <html>
-       <head>
-         <link href="${codiconsUri}" rel="stylesheet"/>
-       </head>
-       <body>
-         <div class="toolbar-container">
-          <div class="debug-toolbar">
-             <button onclick="send('continue')"><i class="codicon codicon-debug-continue"></i></button>
-             <button onclick="send('stepOver')" class="icon-btn"><i class="codicon codicon-debug-step-over"></i></button>
-             <button onclick="send('stepInto')" class="icon-btn"><i class="codicon codicon-debug-step-into"></i></button>
-             <button onclick="send('stepOut')" class="icon-btn"><i class="codicon codicon-debug-step-out"></i></button>
-             <button onclick="send('stop')" class="icon-btn"><i class="codicon codicon-debug-stop"></i></button>
-          </div>
-         </div>
-
-         <style>
-           .toolbar-container {
-             display: flex;
-             justify-content: center;
-             align-items: center;
-           }
-           .debug-toolbar {
-             display: flex;
-             gap: 4px;
-             background: var(--vscode-editor-background);
-             border-bottom: 1px solid var(--vscode-panel-border);
-           }
-           .debug-toolbar button {
-             width: 32px;
-             height: 32px;
-             font-size: 16px;
-             border: none;
-             border-radius: 4px;
-             background: var(--vscode-button-secondaryBackground);
-             color: var(--vscode-foreground);
-             cursor: pointer;
-           }
-           .debug-toolbar button:hover {
-             background: var(--vscode-button-hoverBackground);
-           }
-         </style>
-
-         <script>
-           const vscode = acquireVsCodeApi();
-           function send(cmd) {
-             vscode.postMessage({ command: cmd });
-           }
-         </script>
-      </body>
-      </html>`;
+  public sendMessageToWebview(message: WebviewMessage) {
+    this._sendToWebview(message);
   }
 }
 
 export function activate(context: vscode.ExtensionContext) {
-  vscode.window.registerWebviewViewProvider(
-    "myToolsView",
-    new MyToolsViewProvider(context, 1),
-  );
-  vscode.window.registerWebviewViewProvider(
-    "myToolsView2",
-    new MyToolsViewProvider(context, 2),
+  const provider = new MyToolsViewProvider(context);
+
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider("myToolsView", provider)
   );
 
-  vscode.commands.registerCommand("myext.run", () => {
-    vscode.window.showInformationMessage("Run clicked");
-  });
+  context.subscriptions.push(
+    vscode.commands.registerCommand("myext.sendToWebview", () => {
+      provider.sendMessageToWebview({ 
+        command: "updateFramework", 
+        data: "vue" 
+      });
+      vscode.window.showInformationMessage("Sent 'updateFramework: vue' to webview");
+    })
+  );
 
-  vscode.commands.registerCommand("myext.debug", () => {
-    vscode.window.showInformationMessage("debug!!!");
-  });
+  context.subscriptions.push(
+    vscode.commands.registerCommand("myext.run", () => {
+      vscode.window.showInformationMessage("Run clicked");
+    })
+  );
 
-  vscode.commands.registerCommand("myext.download", async () => {
-    vscode.window.showInformationMessage("Download clicked");
-  });
+  context.subscriptions.push(
+    vscode.commands.registerCommand("myext.debug", () => {
+      vscode.window.showInformationMessage("debug!!!");
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand("myext.download", async () => {
+      provider.sendMessageToWebview({ command: "download", data: {} });
+      vscode.window.showInformationMessage("Download command sent to webview");
+    })
+  );
 }
 
 export function deactivate() {}
+
+function getNonce() {
+  let text = "";
+  const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  for (let i = 0; i < 32; i++) {
+    text += possible.charAt(Math.floor(Math.random() * possible.length));
+  }
+  return text;
+}
