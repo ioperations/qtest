@@ -1,15 +1,55 @@
-import * as assert from 'assert';
+import * as assert from "assert";
+import * as vscode from "vscode";
+import { MyToolsViewProvider, activate } from "../extension";
 
-// You can import and use all API from the 'vscode' module
-// as well as import your extension to test it
-import * as vscode from 'vscode';
-// import * as myExtension from '../../extension';
+suite("Extension", () => {
+  const createMockContext = (): vscode.ExtensionContext =>
+    ({
+      subscriptions: [],
+      extensionUri: vscode.Uri.file("/test"),
+      extensionMode: vscode.ExtensionMode.Test,
+      extension: {} as vscode.Extension<unknown>,
+      secrets: {} as vscode.SecretStorage,
+      environmentVariableCollection:
+        {} as vscode.EnvironmentVariableCollection,
+      globalState: {} as vscode.Memento,
+      workspaceState: {} as vscode.Memento,
+      globalStorageUri: vscode.Uri.file("/global"),
+      logUri: vscode.Uri.file("/log"),
+      asAbsolutePath: (p: string) => p,
+    }) as unknown as vscode.ExtensionContext;
 
-suite('Extension Test Suite', () => {
-	vscode.window.showInformationMessage('Start all tests.');
+  suite("activate", () => {
+    test("adds subscriptions to context", () => {
+      const context = createMockContext();
+      activate(context);
+      assert.ok(context.subscriptions.length > 0);
+    });
 
-	test('Sample test', () => {
-		assert.strictEqual(-1, [1, 2, 3].indexOf(5));
-		assert.strictEqual(-1, [1, 2, 3].indexOf(0));
-	});
+    test("registers webview view provider", () => {
+      const context = createMockContext();
+      activate(context);
+      const provider = context.subscriptions.find(
+        (s) =>
+          typeof s === "object" &&
+          "dispose" in (s as object) &&
+          (s as { dispose: () => void }).dispose !== undefined,
+      );
+      assert.ok(provider, "expected at least one disposable subscription");
+    });
+  });
+
+  suite("MyToolsViewProvider", () => {
+    test("constructor creates provider with context", () => {
+      const context = createMockContext();
+      const provider = new MyToolsViewProvider(context);
+      assert.ok(provider);
+    });
+
+    test("sendMessageToWebview does not throw when no view", () => {
+      const context = createMockContext();
+      const provider = new MyToolsViewProvider(context);
+      provider.sendMessageToWebview({ command: "test", data: {} });
+    });
+  });
 });

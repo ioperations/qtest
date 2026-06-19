@@ -1,11 +1,12 @@
 import * as vscode from "vscode";
+import { getNonce } from "./utils";
 
 interface WebviewMessage {
   command: string;
   data?: unknown;
 }
 
-class MyToolsViewProvider implements vscode.WebviewViewProvider {
+export class MyToolsViewProvider implements vscode.WebviewViewProvider {
   private _view?: vscode.WebviewView;
   private _context: vscode.ExtensionContext;
 
@@ -183,12 +184,4 @@ export function activate(context: vscode.ExtensionContext) {
 
 export function deactivate() {}
 
-function getNonce() {
-  let text = "";
-  const possible =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  for (let i = 0; i < 32; i++) {
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
-  }
-  return text;
-}
+
