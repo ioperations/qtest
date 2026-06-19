@@ -48,7 +48,6 @@ class MyToolsViewProvider implements vscode.WebviewViewProvider {
     
     const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(webviewDistPath, "index.js"));
     const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(webviewDistPath, "index.css"));
-    const codiconCssUri = webview.asWebviewUri(vscode.Uri.joinPath(webviewDistPath, "codicon.css"));
 
     const nonce = getNonce();
 
@@ -58,7 +57,6 @@ class MyToolsViewProvider implements vscode.WebviewViewProvider {
     <meta charset="UTF-8">
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}'; font-src ${webview.cspSource};">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="${codiconCssUri}" rel="stylesheet">
     <link href="${styleUri}" rel="stylesheet">
     <title>QTest Webview</title>
 </head>
