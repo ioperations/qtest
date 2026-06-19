@@ -23,11 +23,11 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   ];
 
   const debugActions = [
-    { id: "continue", label: "Continue", icon: "▶" },
-    { id: "stepOver", label: "Step Over", icon: "⏭" },
-    { id: "stepInto", label: "Step Into", icon: "⏬" },
-    { id: "stepOut", label: "Step Out", icon: "⏫" },
-    { id: "stop", label: "Stop", icon: "■" },
+    { id: "continue", label: "Continue", icon: "codicon-debug-continue" },
+    { id: "stepOver", label: "Step Over", icon: "codicon-debug-step-over" },
+    { id: "stepInto", label: "Step Into", icon: "codicon-debug-step-into" },
+    { id: "stepOut", label: "Step Out", icon: "codicon-debug-step-out" },
+    { id: "stop", label: "Stop", icon: "codicon-debug-stop" },
   ];
 
   return (
@@ -60,7 +60,11 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             className="debug-btn"
             title={action.label}
           >
-            {action.icon}
+            {action.icon.startsWith("codicon-") ? (
+              <i className={`codicon ${action.icon}`} />
+            ) : (
+              action.icon
+            )}
           </button>
         ))}
       </div>
